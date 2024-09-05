@@ -13,13 +13,13 @@ function sendMessage() {
     const messageText = input.value.trim();
 
     if (messageText) {
-        // Add user's message to the chat history
+        // Add user's message 
         addMessage('user', 'User', 'user-avatar.png', messageText);
 
         // Clear the input field
         input.value = '';
 
-        // Simulate a system response after a short delay
+        // response after a short delay
         setTimeout(function() {
             addMessage('system', 'AI Assistant', 'system-avatar.png', "I am a simple bot. I don't have real responses yet!");
         }, 500);

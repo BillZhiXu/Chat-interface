@@ -85,6 +85,9 @@ body {
     background-color: #5e3df1;
     color: white;
     border-radius: 15px 15px 0 15px;
+    max-width: 85%; 
+    word-wrap: break-word; 
+    line-height: 1.4; 
 }
 
 .message.system .text {
