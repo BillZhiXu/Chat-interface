@@ -8,21 +8,37 @@ document.getElementById('message-input').addEventListener('keypress', function(e
     }
 });
 
-function sendMessage() {
+async function sendMessage() {
     const input = document.getElementById('message-input');
     const messageText = input.value.trim();
 
     if (messageText) {
-        // Add user's message 
-        addMessage('user', 'User', 'user-avatar.png', messageText);
+        // Add user's message to the chat
+        addMessage('user', 'User', '/static/user-avatar.png', messageText);
 
         // Clear the input field
         input.value = '';
 
-        // response after a short delay
-        setTimeout(function() {
-            addMessage('system', 'AI Assistant', 'system-avatar.png', "I am a simple bot. I don't have real responses yet!");
-        }, 500);
+        // Send the message to the backend
+        try {
+            const response = await fetch('/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: messageText })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                // Add the bot's response to the chat
+                addMessage('system', 'AI Assistant', '/static/system-avatar.png', data.response);
+            } else {
+                addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error: Could not get response from GPT.');
+            }
+        } catch (error) {
+            addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error: Network issue.');
+        }
     }
 }
 

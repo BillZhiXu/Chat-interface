@@ -10,8 +10,8 @@ body {
 
 .chat-container {
     background-color: #fff;
-    width: 500px;
-    height: 500px;
+    width: 90%;
+    height: 90%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     overflow: hidden;
@@ -38,13 +38,14 @@ body {
 .message {
     margin-bottom: 15px;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
+    width: 100%;
 }
 
 .message.user {
     flex-direction: row-reverse; /* Profile image on the right */
     align-self: flex-end; /* Align the message container to the right */
-    text-align: right; /* Align text to the right */
+    text-align: left; /* Align text to the right */
 }
 
 .message.system {
@@ -85,7 +86,7 @@ body {
     background-color: #5e3df1;
     color: white;
     border-radius: 15px 15px 0 15px;
-    max-width: 85%; 
+    max-width: 100%; 
     word-wrap: break-word; 
     line-height: 1.4; 
 }
