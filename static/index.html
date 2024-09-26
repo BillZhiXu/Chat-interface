@@ -3,25 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Interface</title>
-    <!-- Link to the CSS file -->
+    <title>Data Visualization Chat Interface</title>
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="/static/styles.css">
-    <script src="/static/script.js"></script>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h2>AI Assistant</h2>
+            <h2>Data Visualization AI Assistant</h2>
         </div>
-        <div id="chat-history" class="chat-history">
-            <!-- Messages will be dynamically inserted here -->
+        <div id="drop-area">
+            <h3>Upload your CSV file</h3>
+            <p>Drag & drop a CSV file here or</p>
+            <input type="file" id="file-input" accept=".csv" />
+            <button id="upload-button">Upload CSV</button>
+            <div id="error-message"></div>
         </div>
+        <!-- Button to toggle table preview, initially disabled -->
+        <button id="toggle-table-preview" style="display:none;">Toggle Table Preview</button>
+
+        <div id="table-preview"></div>
+        <div id="chat-history" class="chat-history"></div>
         <div class="chat-input">
             <input type="text" id="message-input" placeholder="Type your message here">
             <button id="send-button">Send</button>
         </div>
     </div>
-    <!-- Link to the JavaScript file -->
+
+    <!-- Ensure these are placed at the bottom -->
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
     <script src="/static/script.js"></script>
 </body>
 </html>

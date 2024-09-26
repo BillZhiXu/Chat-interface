@@ -28,6 +28,54 @@ body {
     font-weight: bold;
 }
 
+#drop-area {
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+    margin: 10px 0;
+    border: 2px dashed #ccc;
+    min-height: 150px;
+}
+
+#drop-area.dragover {
+    background-color: #f1f1f1;
+    border-color: #666;
+}
+
+#table-preview {
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+
+#toggle-table-preview {
+    margin: 10px;
+    padding: 10px 20px;
+    background-color: #5e3df1;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#toggle-table-preview:hover {
+    background-color: #4c31c6;
+}
+
 .chat-history {
     padding: 15px;
     flex: 1;
