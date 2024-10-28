@@ -10,8 +10,8 @@ body {
 
 .chat-container {
     background-color: #fff;
-    width: 90%;
-    height: 90%;
+    width: 95%;
+    height: 95%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 10px;
     overflow: hidden;
@@ -34,7 +34,7 @@ body {
     background-color: #f9f9f9;
     margin: 10px 0;
     border: 2px dashed #ccc;
-    min-height: 150px;
+    min-height: 100px;
 }
 
 #drop-area.dragover {
@@ -44,7 +44,12 @@ body {
 
 #table-preview {
     margin-top: 20px;
+    max-height: 400px;  /* Adjust the height as needed */
+    overflow-y: scroll;
+    border: 1px solid #ccc;  /* Optional: Add a border for better visibility */
+    padding: 10px;  /* Optional: Add padding for better spacing */
 }
+
 
 table {
     width: 100%;
@@ -175,4 +180,27 @@ th, td {
 
 #send-button:hover {
     background-color: #4c31c6;
+}
+
+#clear-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin-left: 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#clear-button:hover {
+    background-color: #c82333;
+}
+
+.loading-spinner {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
 }

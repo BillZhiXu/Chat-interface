@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = d3.csvParse(text);
 
             // Display the first 15 rows of the parsed data in a table
-            displayTablePreview(data.slice(0, 9));
+            displayTablePreview(data);
 
             csvUploaded = true; // Mark that a CSV file has been successfully uploaded
             uploadCSVFile(); // Automatically upload the CSV to the backend
@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', function () {
         tableHTML += '</tbody></table>';
 
         tableDiv.innerHTML = tableHTML;  // Display the table in the preview area
+        tableDiv.style.maxHeight = '400px';  // Adjust the height as needed
+        tableDiv.style.overflowY = 'scroll';  // Add vertical scroll
 
         // Show the toggle button once the table is displayed
         const toggleButton = document.getElementById('toggle-table-preview');
@@ -147,10 +149,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // clear button click
+    document.getElementById('clear-button').addEventListener('click', function() {
+        document.getElementById('chat-history').innerHTML = '';
+    });
+
+
     async function sendMessage() {
         const input = document.getElementById('message-input');
         const messageText = input.value.trim();
     
+        // add loading icon
+
         if (messageText) {
             // Add user's message to the chat
             addMessage('user', 'User', '/static/user-avatar.png', messageText);
@@ -163,7 +173,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Please upload a CSV file before sending a message.');
                 return;
             }
-    
+            
+            // Add loading spinner next to the system profile
+            const loadingMessage = document.createElement('div');
+            loadingMessage.className = 'message system';
+            loadingMessage.innerHTML = `
+                <img src="/static/system-avatar.png" class="profile-img" alt="System">
+                <div class="name">AI Assistant</div>
+                <div class="text">
+                    <img src="/static/3-dots-scale-middle.svg" alt="Loading..." class="loading-spinner">
+                </div>
+            `;
+            document.getElementById('chat-history').appendChild(loadingMessage);
+
             try {
                 const response = await fetch('/query', {
                     method: 'POST',
@@ -172,10 +194,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: JSON.stringify({ prompt: messageText })
                 });
+
+                // Remove loading spinner
+                loadingMessage.remove();
     
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Response from GPT:", data);
+                    // console.log("Response from GPT:", data);
     
                     // Check if the response is related to data visualization
                     if (data.specification && data.description) {
@@ -225,15 +250,22 @@ document.addEventListener('DOMContentLoaded', function () {
                                 console.error('Error embedding Vega-Lite visualization:', err);
                                 addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error embedding the visualization.');
                             });
-                    } else {
-                        // If the response is not related to data visualization, print it directly
-                        addMessage('system', 'AI Assistant', '/static/system-avatar.png', data.description || "Request unrelated to data visualization.");
+                    } 
+                    else if (data.description) {
+                        // If the response is a data analysis, print it directly
+                        addMessage('system', 'AI Assistant', '/static/system-avatar.png', data.description);
+                    }
+                    else {
+                        // If the response is not related to data visualization or analysis, print it directly
+                        addMessage('system', 'AI Assistant', '/static/system-avatar.png', "Request unrelated to data visualization or analysis.");
                     }
     
                 } else {
                     addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error: Could not get response from GPT.');
                 }
             } catch (error) {
+                // Remove loading spinner
+                loadingMessage.remove();
                 addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error: Network issue.');
             }
         }

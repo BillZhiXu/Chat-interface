@@ -71,7 +71,7 @@ chart_generation_tool = {
 
 def chart_generation(prompt: str) -> dict:
     """Generates a Vega-Lite chart specification based on the user's prompt."""
-    vega_prompt = generate_vega_prompt(dataset_metadata, prompt)
+    vega_prompt = generate_vega_prompt(dataset_metadata, sample_rows, prompt)
     
     chat_completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
@@ -80,22 +80,9 @@ def chart_generation(prompt: str) -> dict:
             {"role": "user", "content": vega_prompt},
         ]
     )
-
-    # Get the base specification (without data)
+    
     response_content = chat_completion.choices[0].message.content
-    base_spec = json.loads(response_content)
-    
-    # Step 2: Add the data to the specification
-    # Access the "specification" field and add the "data"
-    if "specification" in base_spec:
-        base_spec["specification"]["data"] = {"values": sample_rows}  # Add sample data for chart rendering
-        
-        # Ensure required base properties
-        base_spec["specification"].setdefault("$schema", "https://vega.github.io/schema/vega-lite/v5.json")
-    
-    print("Modified base_spec:", base_spec)
-    # response_content = chat_completion.choices[0].message.content
-    return base_spec
+    return json.loads(response_content)
 
 # Data Analysis Tool
 data_analysis_tool = {
@@ -120,7 +107,7 @@ data_analysis_tool = {
 def data_analysis(query: str) -> str:
     """Generates executable Python code based on the user's analysis query and executes it."""
     # Generate the prompt for the model to convert the query to Python code
-    analysis_prompt = generate_analysis_prompt(dataset_metadata, query)
+    analysis_prompt = generate_analysis_prompt(dataset_metadata, sample_rows, query)
     
     # Call the OpenAI API with the generated prompt
     chat_completion = client.chat.completions.create(
@@ -158,13 +145,7 @@ def execute_panda_dataframe_code(code: str) -> str:
     mystdout = StringIO()
     sys.stdout = mystdout
     try:
-        globals_dict = {
-            'data': sample_rows,  # Use pre-sampled data in `globals_dict`
-            'pd': pd,             # Make pandas available
-            'json': json,         # Import json for output formatting
-            'print': print        # Ensure print is available
-        }
-        exec(code, globals_dict)
+        exec(code)
         sys.stdout = old_stdout
         return mystdout.getvalue()
     except Exception as e:
@@ -180,34 +161,32 @@ tool_map = {
 }
 
 
-def generate_analysis_prompt(data_info, user_query):
+def generate_analysis_prompt(data_info, sample_data, user_query):
     analysis_prompt = f"""
 You are an expert data analysis that uses all the data to generate analysis code. The user has provided the following query:: '{user_query}'.
 
-The full dataset is already loaded into a dictionary named `data`, containing all the data points provided by the user. 
-The dataset includes the following columns and data types:
+The full dataset is already loaded into a Pandas DataFrame named `df`, containing all the data points provided by the user. The dataset includes the following columns and data types:
 {json.dumps(data_info, indent=2)}
 
+Here are the dataset's structure (MAKE SURE all col have 30 values) SET this to equal to the data dictionary(Dictionary of Lists):
+{json.dumps(sample_data, indent=2)}
 
-If the user's request contain variables UNRELATED or not PRESENT in the data,ie. attributes not in the "column", provide the following response:
+If the user's request contain column variables NOT PROVIDED in the data, provide the following response:
 {{
   "description": "It seems that your request is not related to the provided data."
 }}
 
-
 If the user's request relates to data analysis (pay close attention to words refering to columns of the dataset), generate Python code to perform the analysis. Ensure that:
 1. Please make sure that the code won't rasie any error and will run without any issue. ie. not SyntaxError, ValueError, etc.
-2. Please use the 'data' dictionary to access the data. do not make up any data.
-3. Convert the 'data' dictionary to a pandas DataFrame with the following code: 
-    `df = pd.DataFrame(data)`
-4. The code performs only the requested operation.
+2. The code includes necessary imports if required (e.g., `import pandas as pd` 'import json).
+3. Use a data dictionary (Dictionary of Lists) to store the ALL the data provided (ENSURE that all arrays are of the SAME length). then convert it to a pandas DataFrame. 
+4. The code performs only the requested operation and prints the result so it can be captured.
 5. Use the `print()` function to output the result explicitly with 'json.dumps()' and in f-string (formatted string literal) format. 
-The print should output in the following JSON format with DOUBLE quotes(""), up to two decimal points and ONLY "description" as key:
- for example: 
+The print should output in the following JSON format with DOUBLE quotes, up to two decimal points and ONLY "description" as key:
+ for example:
  print(json.dumps({{"description": "The range of car weights is 100"}}))
  print(json.dumps({{"description": "average MPG from Europe is 25, average MPG from Japan is 30, and average MPG from US is 20"}}))
 6. The code should not include any nonexecutable content (e.g., comments, markdown, or explanations).
-7. Again, the code must print with 'json.dumps()' and in f-string (formatted string literal) format.
 
 """
 
@@ -215,7 +194,7 @@ The print should output in the following JSON format with DOUBLE quotes(""), up 
 
 
 # Function to generate the prompt for Vega-Lite, including sample rows
-def generate_vega_prompt(data_info, user_prompt):
+def generate_vega_prompt(data_info, sample_data, user_prompt):
     vega_prompt = f"""
     IMPORTANT: You must respond with ONLY a JSON object. No other text, no markdown, no explanations outside the JSON.
 
@@ -223,27 +202,16 @@ You are an expert in data visualization. The user has provided the following que
 
 You have access to a dataset with the following columns and associated information:
 {json.dumps(data_info, indent=2)}
-The DataFrame containing the data will be added to the Vega-Lite specification as the 'data' property later
-
+ Here are dataset datapoints:
+{json.dumps(sample_data, indent=2)}
 
 If the user's request relates to creating a data visualization (pay close attention to words refering to columns of the dataset), generate a JSON response that contains:
 1. "description": A concise explanation of the chart that you've created.
 2. "specification": A full Vega-Lite specification, including:
+   - "$schema": The URL for the Vega-Lite schema.
+   - "data": A JSON object that includes the sample data points under the "values" key.
    - "mark": The type of visualization to be generated (e.g., "bar", "line", "point").
    - "encoding": Details on how the data fields are mapped to the axes and other visual elements (x-axis, y-axis, color, etc.).
-   {{
-  "specification": {{
-        "mark": "type of mark (bar/line/point/area/boxplot)",
-        "encoding": {{
-            "x": {{"field": "column_name", "type": "nominal/quantitative/temporal"}},
-            "y": {{"field": "column_name" or "aggregate": "count", "type": "nominal/quantitative/temporal"}},
-            optional additional encodings:
-            "color": {{"field": "column_name", "type": "type"}},
-            "tooltip": [array of field specifications],
-            "size": {{"field": "column_name", "type": "type"}}
-        }}
-    }}
-}}
 
 If the user's request contain variables UNRELATED or not PRESENT in the data, provide the following response:
 {{
@@ -252,13 +220,27 @@ If the user's request contain variables UNRELATED or not PRESENT in the data, pr
 
 Here is an example of the Vega-Lite specification format:
 {{
-  "specification": {{
-        "mark": "bar",
-        "encoding": {{
-            "x": {{"field": "Weight", "type": "quantitative", "bin": true}},
-            "y": {{"aggregate": "count", "type": "quantitative"}}
-        }}
-    }}
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "data": {{
+    "values": [
+      {{"category": "A", "group": "x", "value": 0.1}},
+      {{"category": "A", "group": "y", "value": 0.6}},
+      {{"category": "A", "group": "z", "value": 0.9}},
+      {{"category": "B", "group": "x", "value": 0.7}},
+      {{"category": "B", "group": "y", "value": 0.2}},
+      {{"category": "B", "group": "z", "value": 1.1}},
+      {{"category": "C", "group": "x", "value": 0.6}},
+      {{"category": "C", "group": "y", "value": 0.1}},
+      {{"category": "C", "group": "z", "value": 0.2}}
+    ]
+  }},
+  "mark": "bar",
+  "encoding": {{
+    "x": {{"field": "category"}},
+    "y": {{"field": "value", "type": "quantitative"}},
+    "xOffset": {{"field": "group"}},
+    "color": {{"field": "group"}}
+  }}
 }}
 """
 
@@ -277,11 +259,10 @@ async def upload_data(file: UploadFile = File(...)):
             "types": [str(df[col].dtype) for col in df.columns]
         }
 
-        # # Get all data
-        sample_data = df.to_dict(orient='records')
+        # # Get 50 sample rows
+        sample_data = df.sample(n=30, random_state=1).to_dict(orient='records')
 
         # Store the dataset metadata and the sample rows in global variables
-        print(data_info)
         global dataset_metadata, sample_rows
         dataset_metadata = data_info
         sample_rows = sample_data  # Store the sample rows for use in the query
@@ -306,7 +287,7 @@ async def query_openai(request: QueryRequest):
         # Prepare the initial prompt and tools
         prompt = request.prompt
         messages = [
-            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user. If the request is a Chart and analysis query, you must use both tools."},
+            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user. If the request is a Chart and analysis query, use both tools."},
             {"role": "user", "content": prompt}
         ]
 
@@ -326,6 +307,7 @@ async def query_openai(request: QueryRequest):
             )
 
             # If the response has final content, return it
+            print(response.choices[0].message)
             if response.choices[0].message.content is not None:
                 print("Final response:", response.choices[0].message.content)
                 return response.choices[0].message.content
@@ -346,7 +328,6 @@ async def query_openai(request: QueryRequest):
                     # Determine if the tool call is for chart generation or data analysis
                     if tool_call.function.name == "chart_generation":
                         result_data["specification"] = result.get("specification")
-                        result_data["description"] = result.get("description")
                     elif tool_call.function.name == "data_analysis":
                         result_data["description"] = result.get("description")
 
