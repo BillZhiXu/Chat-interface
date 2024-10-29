@@ -93,7 +93,6 @@ def chart_generation(prompt: str) -> dict:
         # Ensure required base properties
         base_spec["specification"].setdefault("$schema", "https://vega.github.io/schema/vega-lite/v5.json")
     
-    print("Modified base_spec:", base_spec)
     # response_content = chat_completion.choices[0].message.content
     return base_spec
 
@@ -202,12 +201,13 @@ If the user's request relates to data analysis (pay close attention to words ref
     `df = pd.DataFrame(data)`
 4. The code performs only the requested operation.
 5. Use the `print()` function to output the result explicitly with 'json.dumps()' and in f-string (formatted string literal) format. 
-The print should output in the following JSON format with DOUBLE quotes(""), up to two decimal points and ONLY "description" as key:
  for example: 
  print(json.dumps({{"description": "The range of car weights is 100"}}))
  print(json.dumps({{"description": "average MPG from Europe is 25, average MPG from Japan is 30, and average MPG from US is 20"}}))
-6. The code should not include any nonexecutable content (e.g., comments, markdown, or explanations).
-7. Again, the code must print with 'json.dumps()' and in f-string (formatted string literal) format.
+6. The print should output up to two decimal points and ONLY "description" as key.
+7. The code should not include any nonexecutable content (e.g., comments, markdown, or explanations).
+8. DO NOT use any loop or conditional statements in the code.
+9. Again, the code must print with 'json.dumps()' and in f-string (formatted string literal) format.
 
 """
 
@@ -282,6 +282,9 @@ async def upload_data(file: UploadFile = File(...)):
 
         # Store the dataset metadata and the sample rows in global variables
         print(data_info)
+        print(sample_data[:10])
+        df = pd.DataFrame(sample_data)
+        print(df.head())
         global dataset_metadata, sample_rows
         dataset_metadata = data_info
         sample_rows = sample_data  # Store the sample rows for use in the query
@@ -306,7 +309,7 @@ async def query_openai(request: QueryRequest):
         # Prepare the initial prompt and tools
         prompt = request.prompt
         messages = [
-            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user. If the request is a Chart and analysis query, you must use both tools."},
+            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user. If the request is a Chart and analysis query, you must use both tools. If the request is not related to visualization or analysis, say'Not Related'."},
             {"role": "user", "content": prompt}
         ]
 
