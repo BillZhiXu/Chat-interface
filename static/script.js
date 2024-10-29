@@ -245,10 +245,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         vegaEmbed(`#${chartContainer.id}`, data.specification)
                             .then(result => {
                                 console.log('Vega-Lite visualization embedded successfully!');
+                                scrollToBottom();
                             })
                             .catch(err => {
                                 console.error('Error embedding Vega-Lite visualization:', err);
                                 addMessage('system', 'AI Assistant', '/static/system-avatar.png', 'Error embedding the visualization.');
+                                scrollToBottom();
                             });
                     } 
                     else if (data.description) {
@@ -271,6 +273,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
+     // Function to scroll to the bottom of the chat history
+     function scrollToBottom() {
+        const chatHistory = document.getElementById('chat-history');
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
     // Helper function to add messages to the chat
     function addMessage(sender, name, profileImage, text) {
         const chatHistory = document.getElementById('chat-history');
@@ -301,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
         chatHistory.appendChild(message);
     
         // Scroll to the bottom of the chat history
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        scrollToBottom();
     }
     
 });

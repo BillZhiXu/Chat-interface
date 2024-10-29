@@ -194,10 +194,10 @@ If the user's request contain variables UNRELATED or not PRESENT in the data,ie.
 }}
 
 
-If the user's request relates to data analysis (pay close attention to words refering to columns of the dataset), generate Python code to perform the analysis. Ensure that:
+If the user's request relates to data analysis, generate Python code to perform the analysis. Ensure that:
 1. Please make sure that the code won't rasie any error and will run without any issue. ie. not SyntaxError, ValueError, etc.
-2. Please use the 'data' dictionary to access the data. do not make up any data.
-3. Convert the 'data' dictionary to a pandas DataFrame with the following code: 
+2. Please use the 'data' dictionary to access the data. NEVER make up any data.
+3. ALWAYS Convert the 'data' dictionary to a pandas DataFrame with the following code (MUST include this line): 
     `df = pd.DataFrame(data)`
 4. The code performs only the requested operation.
 5. Use the `print()` function to output the result explicitly with 'json.dumps()' and in f-string (formatted string literal) format. 
@@ -205,9 +205,11 @@ If the user's request relates to data analysis (pay close attention to words ref
  print(json.dumps({{"description": "The range of car weights is 100"}}))
  print(json.dumps({{"description": "average MPG from Europe is 25, average MPG from Japan is 30, and average MPG from US is 20"}}))
 6. The print should output up to two decimal points and ONLY "description" as key.
+7. The printed statement should be a complete sentence, grammatically correct and present the data as a dictionary-like structure if necessary, with each category and value clearly outlined.
 7. The code should not include any nonexecutable content (e.g., comments, markdown, or explanations).
 8. DO NOT use any loop or conditional statements in the code.
-9. Again, the code must print with 'json.dumps()' and in f-string (formatted string literal) format.
+9. NEVER give me the output directly, return the entire code that generates the output.
+10. Again, the code must print with 'json.dumps()' and in f-string (formatted string literal) format.
 
 """
 
@@ -309,7 +311,7 @@ async def query_openai(request: QueryRequest):
         # Prepare the initial prompt and tools
         prompt = request.prompt
         messages = [
-            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user. If the request is a Chart and analysis query, you must use both tools. If the request is not related to visualization or analysis, say'Not Related'."},
+            {"role": "system", "content": "You are a helpful assistant. Use the supplied tools to assist the user (DO NOT use the same tool twice). If the request is a Chart and analysis query, you must use both tools (eg. Create a bar chart comparing the average mpg across different origins, and provide the numerical averages.). If the request is not related to visualization or analysis, say'Not Related'."},
             {"role": "user", "content": prompt}
         ]
 
